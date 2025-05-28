@@ -10,15 +10,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub (if using private image)
+        if: false # Set to true if using private image
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Build NDS project
         run: |
           docker pull skylyrac/blocksds
-          docker run --rm -v "$(pwd):/workspace" skylyrac/blocksds make
+          docker run --rm -v "$(pwd):/workspace" -w /workspace skylyrac/blocksds make
+
+      - name: List files (debugging)
+        run: ls -la
 
       - name: Upload NDS artifact
+        if: success()
         uses: actions/upload-artifact@v3
         with:
           name: nds-build
           path: |
-            *.nds      # Upload the compiled ROM
-            *.elf      # (Optional) Debug symbols
+            *.nds
+            *.elf
+          if-no-files-found: warn
